@@ -91,7 +91,7 @@ class ViewController: UIViewController {
 
 extension ViewController : UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        self.pokemons.count
+        return self.pokemons.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -153,21 +153,18 @@ extension ViewController: UITableViewDelegate{
         guard let pokemonUrl = URL(string: "https://pokeapi.co/api/v2/pokemon/\(name)") else{
             return
         }
-        print(pokemonUrl)
         self.network.fetchPokemon(with: pokemonUrl){
             result in
-            print(1)
             DispatchQueue.main.async {
                 VC.nameLabel.text = result?.name
-                if let imgUrl = result?.sprites.versions.generationV?.blackWhite.animated?.frontDefault
+                if let imgUrl = result?.sprites.versions.generationV?.blackWhite.animated.frontShiny
                 {
+                    print(imgUrl)
                     self.network.fetchRawData(url: imgUrl){
                         data in
                         guard let data = data else{
-                            print("failed to fetch animated data")
                             return
                         }
-                        print(name)
                         DispatchQueue.main.async {
                             VC.pokemonImage.image = UIImage(data: data)
                         }

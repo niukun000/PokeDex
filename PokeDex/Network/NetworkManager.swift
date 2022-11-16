@@ -43,7 +43,7 @@ class NetworkManager {
     
     func fetchPokemon(with url : URL, completion : @escaping(Pokemon?) -> Void) {
         let temp = self.session.dataTask(with: url){            data, response, error in
-            print("check\(url)")
+//            print("check\(url)")
             guard let data = data else{
                 print("no data from pages")
                 completion(nil)

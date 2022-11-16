@@ -114,12 +114,19 @@ struct OfcialArtwork: Decodable{
 
 struct Versions : Decodable{
     let generationV : GenerationV?
+        enum CodingKeys: String, CodingKey{
+            case generationV = "generation-v"
+        
+    }
 }
 struct GenerationV : Decodable{
     let blackWhite : BlackWhite
+    enum CodingKeys: String, CodingKey{
+        case blackWhite = "black-white"
+    }
 }
 struct BlackWhite : Decodable{
-    let animated : Animated?
+    let animated : Animated
     let BackDefault : URL?
     let BackFemale : URL?
     let BackShiny : URL?
