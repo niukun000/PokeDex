@@ -13,8 +13,13 @@ struct PageResult : Decodable{
     let next : URL?
     let previous : URL?
     let results : [NameLink]
-    
 }
+
+//struct Cache {
+//    let data : Data
+//    let name : String
+//    let types : String
+//}
 
 struct Pokemon : Decodable{
 //    let pokemon: Pokemon

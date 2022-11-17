@@ -91,7 +91,7 @@ class ViewController: UIViewController {
 
 extension ViewController : UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.pokemons.count
+            return min(self.pokemons.count, 151)
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -104,6 +104,15 @@ extension ViewController : UITableViewDataSource {
         cell.nameLabel.text = self.pokemons[indexPath.row].name
         guard let tempUrl = self.pokemons[indexPath.row].url else{
             return UITableViewCell()
+        }
+        
+        let name = self.pokemons[indexPath.row].name
+        
+        
+        if let data : Cach = ImageCache.shared.get(name: name){
+            cell.nameLabel.text = data.name
+            cell.pokemonImageView.image = UIImage(data: data.data)
+            cell.typeLabel.text = "\(data.types)"
         }
         
         self.network.fetchPokemon(with: tempUrl){
@@ -125,10 +134,15 @@ extension ViewController : UITableViewDataSource {
                 guard let picture = picture else{
                     return
                 }
+                
+                ImageCache.shared.set(name: name, data: Cach(name:name, types:types, data:picture))
+                
                 DispatchQueue.main.async {
                     
                     cell.typeLabel.text = types
                     cell.pokemonImageView.image = UIImage(data: picture)
+                    
+                    
                 }
                 
             }
@@ -150,14 +164,29 @@ extension ViewController: UITableViewDelegate{
         guard let name = cell.nameLabel.text else{
             return
         }
+        guard name == self.pokemons[indexPath.row].name else {
+            return
+        }
         guard let pokemonUrl = URL(string: "https://pokeapi.co/api/v2/pokemon/\(name)") else{
             return
         }
         self.network.fetchPokemon(with: pokemonUrl){
             result in
             DispatchQueue.main.async {
-                VC.nameLabel.text = result?.name
-                if let imgUrl = result?.sprites.versions.generationV?.blackWhite.animated.frontShiny
+                guard let result = result else{
+                    return
+                }
+                VC.nameLabel.text = result.name
+                VC.title = result.name
+                let abilities = result.abilities.compactMap { Abilities in
+                    Abilities.ability.name
+                }
+                VC.abilitiesLabel.text = "Abilities: \(abilities)"
+                let moves = result.moves.compactMap { Moves in
+                    Moves.move.name
+                }
+                VC.moveLabel.text = "Moves: \(moves)"
+                if let imgUrl = result.sprites.versions.generationV?.blackWhite.animated.frontShiny
                 {
                     print(imgUrl)
                     self.network.fetchRawData(url: imgUrl){
@@ -172,8 +201,6 @@ extension ViewController: UITableViewDelegate{
                 }else{
                     VC.pokemonImage.image = cell.pokemonImageView.image
                 }
-                
-                
             }
         }
         self.navigationController?.pushViewController(VC, animated: true)
@@ -188,18 +215,5 @@ extension ViewController : UITableViewDataSourcePrefetching{
         guard indexPaths.contains(lastIndexPath) else { return }
         self.requestNextPage()
     }
-    
-    
 }
-//extension ViewController: UITableViewDataSourcePrefetching {
-//
-//    // MARK: "New" way to do Pagination in UIKit
-//    func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
-//
-//        let lastIndexPath = IndexPath(row: self.pokemons.count - 1, section: 0)
-//        print(lastIndexPath)
-//        guard indexPaths.contains(lastIndexPath) else { return }
-//        self.requestNextPage()
-//    }
-//
-//}
+

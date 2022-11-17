@@ -13,8 +13,8 @@ class PokemonlTableViewCell: UITableViewCell {
         let imageView = UIImageView(frame: .zero)
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFit
-        imageView.backgroundColor = .systemGray5
-        imageView.heightAnchor.constraint(equalToConstant: 150).isActive = true
+        imageView.backgroundColor = .systemYellow
+//        imageView.heightAnchor.constraint(equalToConstant: 150).isActive = true
         imageView.widthAnchor.constraint(equalToConstant: 150).isActive = true
         imageView.image = UIImage(named: "teemo")
 //        imageView.sizeToFit()
@@ -35,12 +35,13 @@ class PokemonlTableViewCell: UITableViewCell {
     }()
     
     lazy var typeLabel : UILabel = {
-        let label = UILabel(frame: .zero)
+        let label = UILabel(frame: CGRect(x: 0, y: 0, width: 150, height: 150))
         label.translatesAutoresizingMaskIntoConstraints = false
         label.numberOfLines = 0
         label.backgroundColor = .systemBlue
         label.textColor = .white
         
+        label.layer.masksToBounds = true
         label.layer.cornerRadius = 15.0
 //        label.text = "type"
         label.textAlignment = .center
@@ -59,9 +60,11 @@ class PokemonlTableViewCell: UITableViewCell {
     private func setUpUI(){
         let stack = UIStackView(frame: .zero)
 //        self.nameLabel.layer.cornerRadius = 20
-        self.contentView.heightAnchor.constraint(equalToConstant: 167).isActive = true
+        self.contentView.contentMode = .scaleToFill
+        self.contentView.heightAnchor.constraint(equalToConstant: 100).isActive = true
         self.contentView.addSubview(pokemonImageView)
         self.contentView.addSubview(stack)
+//        self.contentView.su
 
         self.contentView.backgroundColor = .systemGray5
         
@@ -70,12 +73,14 @@ class PokemonlTableViewCell: UITableViewCell {
         self.pokemonImageView.bottomAnchor.constraint(equalTo: self.contentView.bottomAnchor, constant: -8).isActive = true
         
         stack.translatesAutoresizingMaskIntoConstraints = false
+//        stack.contentMode = .scaleToFill
+
         stack.leadingAnchor.constraint(equalTo: self.pokemonImageView.trailingAnchor, constant: 8).isActive = true
         stack.trailingAnchor.constraint(equalTo: self.contentView.trailingAnchor, constant: -8).isActive = true
         stack.topAnchor.constraint(equalTo: self.contentView.topAnchor, constant: 8).isActive = true
         stack.bottomAnchor.constraint(equalTo: self.contentView.bottomAnchor, constant: -8).isActive = true
         
-        stack.heightAnchor.constraint(equalToConstant: 150).isActive = true
+//        stack.heightAnchor.constraint(equalToConstant: 150).isActive = true
         stack.distribution = .fillEqually
         stack.axis = .vertical
         stack.spacing = 3
