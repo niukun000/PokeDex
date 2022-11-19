@@ -58,17 +58,22 @@ class ViewController: UIViewController {
             return
         }
         self.network.fetchPageResult(with: pageUrl){
-            resultPage in
-//            print(resultPage?.results[3].url as Any)
-            guard let resultPage = resultPage else{
-                print("failed to fetch pageresult \(pageUrl)")
-                return
-            }
-            self.currentPage = resultPage
-            self.pokemons.append(contentsOf: resultPage.results)
-//
-            DispatchQueue.main.async {
-                self.pokemonTableView.reloadData()
+            (resultPage : Result<PageResult, NetworkError>) in
+            //            print(resultPage?.results[3].url as Any)
+//            guard let resultPage = resultPage else{
+//                print("failed to fetch pageresult \(pageUrl)")
+//                return
+//            }
+            switch resultPage{
+            case .success(let page):
+                self.currentPage = page
+                self.pokemons.append(contentsOf: page.results)
+                //
+                DispatchQueue.main.async {
+                    self.pokemonTableView.reloadData()
+                }
+            case .failure(let error):
+                print(error)
             }
         }
     }
@@ -95,12 +100,12 @@ extension ViewController : UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        print("start creating cells")
+        print("start creating cell \(indexPath)")
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "PokemonCell", for: indexPath) as? PokemonlTableViewCell else{
             print("failed when creating cell for indexPath \(indexPath)")
             return UITableViewCell()
         }
-        print("namelabel adding")
+//        print("namelabel adding")
         cell.nameLabel.text = self.pokemons[indexPath.row].name
         guard let tempUrl = self.pokemons[indexPath.row].url else{
             return UITableViewCell()
@@ -115,36 +120,41 @@ extension ViewController : UITableViewDataSource {
             cell.typeLabel.text = "\(data.types)"
         }
         
-        self.network.fetchPokemon(with: tempUrl){
-            result in
-            guard let result = result else{
-                print("failed to fetch pokemon")
-                return
-            }
-            var types = "|"
-            result.types.forEach(){
-                type in
-                types += " \(type.type.name) |"
-            }
-            guard let pictureUrl = result.sprites.frontDefault else{
-                return
-            }
-            self.network.fetchRawData(url: pictureUrl){
-                picture in
-                guard let picture = picture else{
+        self.network.fetchPageResult(with: tempUrl){
+            (result : Result<Pokemon, NetworkError>) in
+//            guard let result = result else{
+//                print("failed to fetch pokemon")
+//                return
+//            }
+            switch result{
+            case .success(let result) :
+                var types = "|"
+                result.types.forEach(){
+                    type in
+                    types += " \(type.type.name) |"
+                }
+                guard let pictureUrl = result.sprites.frontDefault else{
                     return
                 }
-                
-                ImageCache.shared.set(name: name, data: Cach(name:name, types:types, data:picture))
-                
-                DispatchQueue.main.async {
+                self.network.fetchRawData(url: pictureUrl){
+                    picture in
+                    guard let picture = picture else{
+                        return
+                    }
                     
-                    cell.typeLabel.text = types
-                    cell.pokemonImageView.image = UIImage(data: picture)
+                    ImageCache.shared.set(name: name, data: Cach(name:name, types:types, data:picture))
                     
+                    DispatchQueue.main.async {
+                        
+                        cell.typeLabel.text = types
+                        cell.pokemonImageView.image = UIImage(data: picture)
+                        
+                        
+                    }
                     
                 }
-                
+            case .failure(let err):
+                print(err)
             }
         }
 
@@ -170,36 +180,43 @@ extension ViewController: UITableViewDelegate{
         guard let pokemonUrl = URL(string: "https://pokeapi.co/api/v2/pokemon/\(name)") else{
             return
         }
-        self.network.fetchPokemon(with: pokemonUrl){
-            result in
+        self.network.fetchPageResult(with: pokemonUrl){
+            (result : Result<Pokemon, NetworkError>) in
             DispatchQueue.main.async {
-                guard let result = result else{
-                    return
-                }
-                VC.nameLabel.text = result.name
-                VC.title = result.name
-                let abilities = result.abilities.compactMap { Abilities in
-                    Abilities.ability.name
-                }
-                VC.abilitiesLabel.text = "Abilities: \(abilities)"
-                let moves = result.moves.compactMap { Moves in
-                    Moves.move.name
-                }
-                VC.moveLabel.text = "Moves: \(moves)"
-                if let imgUrl = result.sprites.versions.generationV?.blackWhite.animated.frontShiny
-                {
-                    print(imgUrl)
-                    self.network.fetchRawData(url: imgUrl){
-                        data in
-                        guard let data = data else{
-                            return
-                        }
-                        DispatchQueue.main.async {
-                            VC.pokemonImage.image = UIImage(data: data)
-                        }
+//                guard let result = result else{
+//                    return
+//                }
+                switch result{
+                case .success(let result) :
+//                    result.
+                    VC.nameLabel.text = ImageCache.shared.get(name: result.name)?.types
+                    VC.title = result.name
+                    
+                    let abilities = result.abilities.compactMap { Abilities in
+                        Abilities.ability.name
                     }
-                }else{
-                    VC.pokemonImage.image = cell.pokemonImageView.image
+                    VC.abilitiesLabel.text = "Abilities: \(abilities)"
+                    let moves = result.moves.compactMap { Moves in
+                        Moves.move.name
+                    }
+                    VC.moveLabel.text = "Moves: \(moves)"
+                    if let imgUrl = result.sprites.versions.generationV?.blackWhite.animated.frontShiny
+                    {
+                        print(imgUrl)
+                        self.network.fetchRawData(url: imgUrl){
+                            data in
+                            guard let data = data else{
+                                return
+                            }
+                            DispatchQueue.main.async {
+                                VC.pokemonImage.image = UIImage(data: data)
+                            }
+                        }
+                    }else{
+                        VC.pokemonImage.image = cell.pokemonImageView.image
+                    }
+                case .failure(let err):
+                    print(err)
                 }
             }
         }
@@ -210,8 +227,8 @@ extension ViewController: UITableViewDelegate{
 
 extension ViewController : UITableViewDataSourcePrefetching{
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
-        let lastIndexPath = IndexPath(row: self.pokemons.count - 1, section: 0)
-        print(lastIndexPath)
+        let lastIndexPath = IndexPath(row: self.pokemons.count - 10, section: 0)
+//        print(lastIndexPath)
         guard indexPaths.contains(lastIndexPath) else { return }
         self.requestNextPage()
     }

@@ -14,26 +14,30 @@ class NetworkManager {
         self.session = session
     }
     
-    func fetchPageResult(with url : URL, completion : @escaping(PageResult?) -> Void) {
+    func fetchPageResult  <T : Decodable>(with url : URL?, completion : @escaping(Result<T, NetworkError>) -> Void) {
+        guard let url : URL = url else{
+            completion(.failure(.badURL))
+            return
+        }
         let task = self.session.dataTask(with: url){
             data, response, error in
             print("fetch pokemon data")
             guard let data = data else{
                 print("no data from pages")
-                completion(nil)
+                completion(.failure(.badData))
                 return
             }
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
             do {
-                let result = try decoder.decode(PageResult.self, from: data)
+                let result = try decoder.decode(T.self, from: data)
                 
-                completion(result)
+                completion(.success(result))
             }
             catch {
                 print("failed to decode")
                 print(error)
-                completion(nil)
+                completion(.failure(.decodeFailure(error as! DecodingError)))
 //                return
             }
             
